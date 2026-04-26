@@ -358,7 +358,7 @@
 
 <script>
   // ── Backend URL — change if you deploy elsewhere ──────────────────────
-  const BACKEND = "http://127.0.0.1:5000";
+  const BACKEND = "";
 
   // ── State ─────────────────────────────────────────────────────────────
   // history = [{role:"user"|"model", parts:"text"}, ...]
@@ -442,7 +442,7 @@
       }
     } catch (err) {
       removeTyping(typingEl);
-      addBot(`❌ Cannot reach the server.<br><small>Make sure <code>app.py</code> is running on port 5000.</small>`, true);
+      addBot("❌ Cannot reach the server. Please check your connection and try again.", true);
     }
 
     btn.disabled = false;
