@@ -1,11 +1,20 @@
 from flask import Flask, request, jsonify, render_template
 import google.generativeai as genai
+from dotenv import load_dotenv
 import os
+
+# Load API key from .env file (keeps it out of source code)
+load_dotenv()
 
 app = Flask(__name__)
 
-# 🔑 Uses GEMINI_API_KEY env variable (set it on your deployment platform)
-genai.configure(api_key=os.environ.get("GEMINI_API_KEY", "AIzaSyA-rk9QOMU6ksYYtxE0BNY9jcfwufKEi3M"))
+# 🔑 Uses GEMINI_API_KEY env variable (set it before running the app)
+api_key = os.environ.get("GEMINI_API_KEY")
+if not api_key:
+    raise RuntimeError("❌ GEMINI_API_KEY environment variable is not set. "
+                       "Get a new key from https://aistudio.google.com/apikey "
+                       "and set it: set GEMINI_API_KEY=your-key-here")
+genai.configure(api_key=api_key)
 
 model = genai.GenerativeModel("gemini-flash-latest")
 
@@ -58,4 +67,5 @@ def chat():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(debug=True, host="0.0.0.0", port=port)
