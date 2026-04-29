@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, render_template
-import google.generativeai as genai
+from google import genai
 from dotenv import load_dotenv
 import os
 
@@ -14,9 +14,8 @@ if not api_key:
     raise RuntimeError("❌ GEMINI_API_KEY environment variable is not set. "
                        "Get a new key from https://aistudio.google.com/apikey "
                        "and set it: set GEMINI_API_KEY=your-key-here")
-genai.configure(api_key=api_key)
 
-model = genai.GenerativeModel("gemini-flash-latest")
+client = genai.Client(api_key=api_key)
 
 SYSTEM_PROMPT = """
 You are a virtual Hydration Coach.
@@ -39,26 +38,29 @@ def chat():
         user_message = data.get("message")
         history = data.get("history", [])
 
-        # 🧠 Convert history to Gemini format
-        chat_history = [
-            {"role": "user", "parts": [SYSTEM_PROMPT]},
-            {"role": "model", "parts": ["Got it. I am your Hydration Coach."]}
+        # 🧠 Build contents list for Gemini
+        contents = [
+            {"role": "user", "parts": [{"text": SYSTEM_PROMPT}]},
+            {"role": "model", "parts": [{"text": "Got it. I am your Hydration Coach."}]}
         ]
 
         for msg in history:
-            chat_history.append({
+            contents.append({
                 "role": msg["role"],
-                "parts": [msg["parts"]]
+                "parts": [{"text": msg["parts"]}]
             })
 
         # Add new message
-        chat_history.append({
+        contents.append({
             "role": "user",
-            "parts": [user_message]
+            "parts": [{"text": user_message}]
         })
 
         # Generate response
-        response = model.generate_content(chat_history)
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=contents
+        )
 
         return jsonify({"reply": response.text})
 
