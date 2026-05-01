@@ -10,12 +10,7 @@ app = Flask(__name__)
 
 # 🔑 Uses GEMINI_API_KEY env variable (set it before running the app)
 api_key = os.environ.get("GEMINI_API_KEY")
-if not api_key:
-    raise RuntimeError("❌ GEMINI_API_KEY environment variable is not set. "
-                       "Get a new key from https://aistudio.google.com/apikey "
-                       "and set it: set GEMINI_API_KEY=your-key-here")
-
-client = genai.Client(api_key=api_key)
+client = genai.Client(api_key=api_key) if api_key else None
 
 SYSTEM_PROMPT = """
 You are a virtual Hydration Coach.
@@ -32,6 +27,9 @@ def home():
 
 @app.route("/chat", methods=["POST"])
 def chat():
+    if not client:
+        return jsonify({"error": "GEMINI_API_KEY is not configured. "
+                        "Set it in the Render dashboard under Environment."}), 500
     try:
         data = request.get_json()
 
@@ -58,7 +56,7 @@ def chat():
 
         # Generate response
         response = client.models.generate_content(
-            model="gemini-2.0-flash-lite",
+            model="gemini-2.0-flash",
             contents=contents
         )
 
