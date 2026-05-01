@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, render_template
-from google import genai
+from groq import Groq
 from dotenv import load_dotenv
 import os
 
@@ -8,9 +8,9 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# 🔑 Uses GEMINI_API_KEY env variable (set it before running the app)
-api_key = os.environ.get("GEMINI_API_KEY")
-client = genai.Client(api_key=api_key) if api_key else None
+# 🔑 Uses GROQ_API_KEY env variable
+api_key = os.environ.get("GROQ_API_KEY")
+client = Groq(api_key=api_key) if api_key else None
 
 SYSTEM_PROMPT = """
 You are a virtual Hydration Coach.
@@ -28,7 +28,7 @@ def home():
 @app.route("/chat", methods=["POST"])
 def chat():
     if not client:
-        return jsonify({"error": "GEMINI_API_KEY is not configured. "
+        return jsonify({"error": "GROQ_API_KEY is not configured. "
                         "Set it in the Render dashboard under Environment."}), 500
     try:
         data = request.get_json()
@@ -36,31 +36,34 @@ def chat():
         user_message = data.get("message")
         history = data.get("history", [])
 
-        # 🧠 Build contents list for Gemini
-        contents = [
-            {"role": "user", "parts": [{"text": SYSTEM_PROMPT}]},
-            {"role": "model", "parts": [{"text": "Got it. I am your Hydration Coach."}]}
+        # 🧠 Build messages list for Groq (OpenAI-compatible format)
+        messages = [
+            {"role": "system", "content": SYSTEM_PROMPT},
         ]
 
         for msg in history:
-            contents.append({
-                "role": msg["role"],
-                "parts": [{"text": msg["parts"]}]
+            role = "assistant" if msg["role"] == "model" else msg["role"]
+            messages.append({
+                "role": role,
+                "content": msg["parts"]
             })
 
         # Add new message
-        contents.append({
+        messages.append({
             "role": "user",
-            "parts": [{"text": user_message}]
+            "content": user_message
         })
 
-        # Generate response
-        response = client.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=contents
+        # Generate response using Groq (Llama 3)
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=messages,
+            temperature=0.7,
+            max_tokens=1024,
         )
 
-        return jsonify({"reply": response.text})
+        reply = response.choices[0].message.content
+        return jsonify({"reply": reply})
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500

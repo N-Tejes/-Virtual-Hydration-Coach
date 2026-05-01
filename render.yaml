@@ -5,7 +5,7 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
     envVars:
-      - key: GEMINI_API_KEY
+      - key: GROQ_API_KEY
         sync: false  # You'll set this manually in the Render dashboard
       - key: PYTHON_VERSION
         value: "3.11.0"
