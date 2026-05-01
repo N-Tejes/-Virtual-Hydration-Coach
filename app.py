@@ -9,7 +9,7 @@ load_dotenv()
 app = Flask(__name__)
 
 # 🔑 Uses GROQ_API_KEY env variable
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "").strip()
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 SYSTEM_PROMPT = """
